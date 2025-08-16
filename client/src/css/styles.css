@@ -1,0 +1,49 @@
+@import "reset.css";
+@font-face {
+  font-family: "astro";
+  src: url("/fonts/AstroSpace-eZ2Bg.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "astro";
+  src: url("/fonts/AstroSpace-0Wl3o.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+* {
+  font-family: "astro", sans-serif;
+}
+
+.main-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: start;
+  align-items: center;
+  background-color: #333;
+  height: 100vh;
+}
+
+nav {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  padding: 40px;
+}
+
+a {
+  padding: 50px;
+  color: rgb(248, 156, 52);
+  font-size: 1rem;
+  font-family: "astro";
+}
+
+h1 {
+  font-family: "astro", sans-serif;
+  font-size: 3rem;
+  color: rgb(248, 156, 52);
+}
