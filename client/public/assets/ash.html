@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Falling Ash + Random Embers</title>
+    <style>
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        background: #121c3b; /* near-black night */
+        overflow: hidden;
+        color: #c9c9c9;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+
+    <script>
+      (() => {
+        const canvas = document.getElementById("c");
+        const ctx = canvas.getContext("2d");
+
+        // Respect user reduced motion
+        let reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+        matchMedia("(prefers-reduced-motion: reduce)").addEventListener?.(
+          "change",
+          (e) => {
+            reduced = e.matches;
+          }
+        );
+
+        // Size & DPR scaling for crispness
+        const state = { w: 0, h: 0, dpr: 1 };
+        function resize() {
+          state.dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+          state.w = Math.floor(innerWidth);
+          state.h = Math.floor(innerHeight);
+          canvas.width = Math.floor(state.w * state.dpr);
+          canvas.height = Math.floor(state.h * state.dpr);
+          canvas.style.width = state.w + "px";
+          canvas.style.height = state.h + "px";
+          ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+        }
+        addEventListener("resize", resize, { passive: true });
+        resize();
+
+        // Particle system
+        const ASH_COUNT = 820; // total ash flakes
+        const EMBER_CHANCE_PER_SEC = 0.8; // probability that some flake will ignite per second
+        const WIND_BASE = 0.06; // baseline horizontal drift
+        const WIND_VARIANCE = 0.12; // how wobbly the drift gets
+        const GRAVITY = 0.2; // fall speed factor
+        const FLICKER = [0.85, 1.0]; // ember glow flicker range
+
+        const rand = (a, b) => a + Math.random() * (b - a);
+        const rnd = (arr) => arr[(Math.random() * arr.length) | 0];
+
+        class Ash {
+          constructor() {
+            this.reset(true);
+          }
+          reset(initial = false) {
+            // start randomly across the screen, some above the top so they drift in
+            this.x = rand(-50, state.w + 50);
+            this.y = initial ? rand(-state.h, state.h) : rand(-50, -10);
+            this.r = rand(0.5, 1.6); // radius
+            this.vx = rand(-WIND_BASE, WIND_BASE);
+            this.vy = rand(0.24, 0.8) * GRAVITY * (1 + Math.random()); // slow fall
+            this.swing = rand(0.8, 2.8); // sinusoidal sway speed
+            this.phase = rand(0, Math.PI * 2); // initial swing phase
+            this.alpha = rand(0.4, 0.9); // faint ash opacity
+            // ember state
+            this.ember = false;
+            this.emberT = 0; // time remaining as ember
+            this.emberTTL = 0;
+          }
+          ignite() {
+            if (this.ember) return;
+            this.ember = true;
+            this.emberTTL = rand(0.8, 2.2); // seconds glowing
+            this.emberT = this.emberTTL;
+          }
+          update(dt, t) {
+            // wobble wind
+            const wind = Math.sin(t * this.swing + this.phase) * WIND_VARIANCE;
+            this.x += (this.vx + wind) * dt * 60;
+            this.y += this.vy * dt * 60;
+
+            // wrap/recycle
+            if (this.y - this.r > state.h + 2) this.reset();
+            if (this.x < -60) this.x = state.w + 60;
+            if (this.x > state.w + 60) this.x = -60;
+
+            // ember timer
+            if (this.ember) {
+              this.emberT -= dt;
+              if (this.emberT <= 0) {
+                this.ember = false;
+                this.emberT = 0;
+              }
+            }
+          }
+          drawAsh() {
+            // subtle blurred ash dot
+            ctx.globalAlpha = this.alpha;
+            ctx.fillStyle = "#c9c9c9";
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+          }
+          drawEmber() {
+            // glowing ember: radial gradient + additive blend
+            const age = 1 - this.emberT / this.emberTTL; // 0 → 1
+            const flick = rand(FLICKER[0], FLICKER[1]);
+            const coreR = this.r * (3.0 + 1.5 * (1 - age)); // core radius
+            const glowR = coreR * 3.5; // outer glow
+            const g = ctx.createRadialGradient(
+              this.x,
+              this.y,
+              0,
+              this.x,
+              this.y,
+              glowR
+            );
+            const hue = rand(18, 28); // warm ember hue
+            const core = `hsla(${hue}, 95%, ${Math.floor(
+              60 + 20 * (1 - age)
+            )}%, ${0.95 * flick})`;
+            const mid = `hsla(${hue}, 90%, 45%, ${0.35 * flick})`;
+            const edge = `rgba(255, 120, 40, 0)`;
+            g.addColorStop(0.0, core);
+            g.addColorStop(0.35, mid);
+            g.addColorStop(1.0, edge);
+
+            const prev = ctx.globalCompositeOperation;
+            ctx.globalCompositeOperation = "lighter";
+            ctx.fillStyle = g;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, glowR, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalCompositeOperation = prev;
+          }
+        }
+
+        const flakes = Array.from({ length: ASH_COUNT }, () => new Ash());
+
+        let last = performance.now();
+        function frame(now) {
+          const dt = Math.min(0.05, (now - last) / 1000); // cap big jumps
+          last = now;
+
+          // Clear with slight trail to feel smoky
+          ctx.fillStyle = "rgba(14,15,18,0.35)"; // same as bg with alpha
+          ctx.fillRect(0, 0, state.w, state.h);
+
+          if (!reduced) {
+            // random ignition chance per second
+            if (Math.random() < EMBER_CHANCE_PER_SEC * dt) {
+              rnd(flakes).ignite();
+            }
+          }
+
+          const t = now / 1000;
+
+          // Draw order: ash first, then embers (so glow appears on top)
+          for (const f of flakes) {
+            f.update(dt, t);
+            f.drawAsh();
+          }
+          for (const f of flakes) {
+            if (f.ember) f.drawEmber();
+          }
+
+          if (!reduced) requestAnimationFrame(frame);
+        }
+
+        // Initial paint (solid) then start loop or static fallback
+        ctx.fillStyle = "#0e0f12";
+        ctx.fillRect(0, 0, state.w, state.h);
+        if (!reduced) requestAnimationFrame(frame);
+      })();
+    </script>
+  </body>
+</html>

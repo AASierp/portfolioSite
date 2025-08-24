@@ -57,7 +57,22 @@ function Projects() {
 
   return (
     <section id="projects" className="projects">
-      <h2>Featured Projects</h2>
+      <h2
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          textAlign: "center",
+          color: "white",
+          backgroundColor: "rgb(48, 58, 75)",
+          fontWeight: "bold",
+          padding: "1rem",
+          width: "100vw",
+          marginBottom: "3rem",
+          textShadow: "1px 1px 10px rgba(255, 170, 76, .6)",
+        }}
+      >
+        Featured Projects
+      </h2>
       <div className="project-container">
         {project.map((e) => (
           <ProjectCard key={e.name} project={e} />
