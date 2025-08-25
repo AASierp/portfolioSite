@@ -1,11 +1,21 @@
-function Footer(){
-    return(
-        <div id = "footer" className="footer-container">
-            <h1>Footer</h1>
-        </div>
-    );
+function Footer() {
+  return (
+    <>
+      <div id="footer" className="footer-container">
+        <a href="#home">Home</a>
+        <a href="#about">About</a>
+        <a href="#projects">Projects</a>
+        <a href="/assets/resume.pdf" target="_blank">
+          Resume
+        </a>
+      </div>
+      <div>
+        <p className = "tm">
+          © 2025 Aaron Sierp. All rights reserved.
+        </p>
+      </div>
+    </>
+  );
 }
-
-
 
 export default Footer;

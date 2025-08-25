@@ -1,6 +1,6 @@
 function Header() {
   return (
-    <div id="header" className="header-container">
+    <div id="home" className="header-container">
       <nav>
         <div className="mono-wrap">
           <a href="/" className="monogram" aria-label="Home">
@@ -14,25 +14,31 @@ function Header() {
                 src="/images/github.png"
               />
             </a>
-            <a href="https://www.linkedin.com/in/aaron-sierp" className="pop-item">
+            <a
+              href="https://www.linkedin.com/in/aaron-sierp"
+              className="pop-item"
+            >
               <img
                 style={{ background: "rgb(255, 170, 76)", width: "2rem" }}
                 src="/images/in.svg"
               />
             </a>
-            <a href="mailto:you@domain.com" className="pop-item">
+            <a href="mailto:aaronsierp@gmail.com" className="pop-item">
               <img
                 style={{ background: "rgb(255, 170, 76)", width: "2rem" }}
-                src="/images/mail.png"
+                src="/images/tl.webp"
               />
             </a>
           </nav>
         </div>
-        <a href="#home">Home</a>
+        {/* <a href="#home">Home</a> */}
         <a href="#about">About</a>
         <a href="#projects">Projects</a>
-        <a href="#contact">Contact</a>
-        <a href="#bio">Bio</a>
+        <a href="#contact">Connect</a>
+        <a href="/assets/resume.pdf" target="_blank">
+          Resume
+        </a>
+        {/* <a href="#bio">Bio</a> */}
       </nav>
       <div className="title"></div>
     </div>
